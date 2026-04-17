@@ -42,10 +42,15 @@ jobs:
           if git clone "$WIKI_URL" wiki 2>/dev/null; then
             echo "Cloned existing wiki."
           else
-            echo "Wiki not found — bootstrapping fresh."
-            mkdir -p wiki
-            git -C wiki init -b main
-            git -C wiki remote add origin "$WIKI_URL"
+            echo ""
+            echo "============================================================"
+            echo "  Wiki not initialized yet."
+            echo "  One-time setup required:"
+            echo "  1. Go to: https://github.com/${{ github.repository }}/wiki"
+            echo "  2. Click 'Create the first page', save anything."
+            echo "  3. Re-run this workflow — it will work automatically."
+            echo "============================================================"
+            exit 1
           fi
 
           git -C wiki config user.name  "github-actions[bot]"

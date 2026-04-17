@@ -1,0 +1,106 @@
+# Breast cancer relevance keywords
+# Used by: webscraper (article filtering & tagging), fetcher (tweet classification)
+# Add / remove terms here to tune what gets captured.
+
+breast_cancer_keywords:
+  # Disease subtypes
+  - breast cancer
+  - breast carcinoma
+  - HER2
+  - HER2+
+  - HER2-low
+  - HER2-ultralow
+  - TNBC
+  - triple-negative
+  - ER+
+  - HR+
+
+  # HER2-targeted agents
+  - trastuzumab
+  - pertuzumab
+  - T-DM1
+  - T-DXd
+  - Enhertu
+  - trastuzumab deruxtecan
+  - tucatinib
+  - Tukysa
+  - neratinib
+  - margetuximab
+
+  # ADC
+  - sacituzumab
+  - Trodelvy
+  - datopotamab
+  - Datroway
+  - TROP2
+  - ADC
+
+  # CDK4/6 inhibitors
+  - CDK4/6
+  - palbociclib
+  - Ibrance
+  - ribociclib
+  - Kisqali
+  - abemaciclib
+  - Verzenio
+
+  # PARP inhibitors
+  - PARP
+  - olaparib
+  - Lynparza
+  - talazoparib
+  - Talzenna
+  - BRCA
+
+  # Endocrine / SERD
+  - ESR1
+  - elacestrant
+  - Orserdu
+  - imlunestrant
+  - Inluriyo
+  - fulvestrant
+  - Faslodex
+  - tamoxifen
+  - aromatase inhibitor
+  - letrozole
+  - anastrozole
+  - exemestane
+  - endocrine
+
+  # PI3K/AKT/mTOR
+  - PI3K
+  - PIK3CA
+  - alpelisib
+  - Piqray
+  - capivasertib
+  - AKT
+  - mTOR
+  - everolimus
+
+  # Immunotherapy
+  - PD-L1
+  - PD-1
+  - pembrolizumab
+  - Keytruda
+  - atezolizumab
+  - immunotherapy
+
+  # Surgical / staging
+  - lumpectomy
+  - mastectomy
+  - neoadjuvant
+  - adjuvant
+  - mammogram
+
+  # Trial names (key ones worth tagging)
+  - DESTINY-Breast
+  - ASCENT
+  - NATALEE
+  - monarchE
+  - MONALEESA
+  - MONARCH
+  - PALOMA
+  - OlympiA
+  - EMBER
+  - KEYNOTE-522
+  - KATHERINE

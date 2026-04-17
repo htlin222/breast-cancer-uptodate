@@ -1,0 +1,121 @@
+# Drug / target group definitions for tweet and article classification
+# Used by: reporter.py (trend aggregation)
+# Format: group_name: [keyword, ...]  (case-insensitive matching)
+
+drug_groups:
+  HER2-targeted:
+    - HER2
+    - trastuzumab
+    - pertuzumab
+    - T-DM1
+    - ado-trastuzumab
+    - T-DXd
+    - Enhertu
+    - trastuzumab deruxtecan
+    - tucatinib
+    - Tukysa
+    - lapatinib
+    - neratinib
+    - margetuximab
+    - DESTINY-Breast
+
+  CDK4/6 inhibitors:
+    - CDK4/6
+    - CDK4
+    - CDK6
+    - palbociclib
+    - Ibrance
+    - ribociclib
+    - Kisqali
+    - abemaciclib
+    - Verzenio
+    - MONARCH
+    - MONALEESA
+    - PALOMA
+    - NATALEE
+
+  PARP inhibitors:
+    - PARP
+    - olaparib
+    - Lynparza
+    - talazoparib
+    - Talzenna
+    - niraparib
+    - rucaparib
+    - BRCA
+    - OlympiA
+
+  PI3K/AKT/mTOR:
+    - PI3K
+    - alpelisib
+    - Piqray
+    - AKT
+    - capivasertib
+    - mTOR
+    - everolimus
+    - Afinitor
+    - PIK3CA
+
+  Immunotherapy:
+    - immunotherapy
+    - checkpoint
+    - PD-1
+    - PD-L1
+    - pembrolizumab
+    - Keytruda
+    - atezolizumab
+    - Tecentriq
+    - TIL
+    - tumor infiltrating lymphocyte
+    - KEYNOTE-522
+
+  ADC:
+    - ADC
+    - antibody-drug conjugate
+    - sacituzumab
+    - Trodelvy
+    - datopotamab
+    - Datroway
+    - datopot
+    - TROP2
+    - ASCENT
+
+  Endocrine therapy:
+    - endocrine
+    - tamoxifen
+    - aromatase
+    - letrozole
+    - anastrozole
+    - exemestane
+    - fulvestrant
+    - Faslodex
+    - elacestrant
+    - Orserdu
+    - imlunestrant
+    - Inluriyo
+    - ESR1
+    - SERD
+    - EMBER
+
+  TNBC:
+    - TNBC
+    - triple negative
+    - triple-negative
+    - capecitabine
+    - carboplatin
+    - nab-paclitaxel
+    - Abraxane
+
+# Conference / event keywords (used for flagging conference tweets)
+conference_keywords:
+  - ASCO
+  - SABCS
+  - ESMO
+  - AACR
+  - ASH
+  - abstract
+  - conference
+  - congress
+  - "#ASCO"
+  - "#SABCS"
+  - "#ESMO"

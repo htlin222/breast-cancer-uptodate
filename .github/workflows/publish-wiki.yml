@@ -1,0 +1,95 @@
+name: Publish Reports to Wiki
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "reports/**.md"
+
+  # Allow manual trigger from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # needed to push to wiki
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2   # need parent to detect changed files
+
+      - name: Find changed report files
+        id: changed
+        run: |
+          # On workflow_dispatch, publish all reports; on push, only changed ones
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            files=$(find reports -name "*.md" | sort)
+          else
+            files=$(git diff --name-only HEAD~1 HEAD -- "reports/*.md" | sort)
+          fi
+          echo "files<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$files" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
+          echo "Changed report files:"
+          echo "$files"
+
+      - name: Clone wiki
+        run: |
+          git clone "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.wiki.git" wiki
+          # Initialise wiki with a Home page if it's empty (first run)
+          if [ ! -f wiki/Home.md ]; then
+            echo "# 乳癌治療趨勢週報 Wiki" > wiki/Home.md
+            echo "" >> wiki/Home.md
+            echo "自動發布每週乳癌治療趨勢報告。" >> wiki/Home.md
+            echo "" >> wiki/Home.md
+            echo "| 週次 | 報告 |" >> wiki/Home.md
+            echo "|------|------|" >> wiki/Home.md
+          fi
+
+      - name: Copy reports and rebuild index
+        run: |
+          changed_files="${{ steps.changed.outputs.files }}"
+
+          if [ -z "$changed_files" ]; then
+            echo "No report files changed — skipping."
+            exit 0
+          fi
+
+          # Copy each changed report into wiki root
+          for f in $changed_files; do
+            [ -f "$f" ] || continue
+            basename=$(basename "$f")
+            cp "$f" "wiki/$basename"
+            echo "Copied $f → wiki/$basename"
+          done
+
+          # Rebuild Home.md index from all reports in wiki (sorted newest first)
+          cd wiki
+          {
+            echo "# 乳癌治療趨勢週報"
+            echo ""
+            echo "> 每週自動生成 · 資料來源：OpenEvidence、OncDaily、OncLive、ESMO、ClinicalTrials.gov"
+            echo ""
+            echo "| 週次 | 連結 |"
+            echo "|------|------|"
+            for md in $(ls [0-9][0-9][0-9][0-9]-W[0-9][0-9].md 2>/dev/null | sort -r); do
+              week="${md%.md}"
+              echo "| $week | [[$week]] |"
+            done
+          } > Home.md
+
+      - name: Commit and push wiki
+        run: |
+          cd wiki
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "Wiki already up-to-date."
+          else
+            git commit -m "wiki: publish ${{ github.ref_name }} reports [skip ci]"
+            git push
+          fi

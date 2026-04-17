@@ -1,0 +1,21 @@
+# Twitter / X API configuration
+# Used by: fetcher.py
+#
+# op_id: Current SearchTimeline GraphQL operation ID.
+#   Twitter rotates this when they redeploy their JS bundle.
+#   If fetching returns 404, fetch https://x.com and grep main.*.js for
+#   the new SearchTimeline operation ID, then update this value.
+#
+# cookie_skip: Short-lived / session cookies that cause auth issues if included.
+#   Add cookie names here to exclude them from the request cookie string.
+
+twitter:
+  op_id: "R0u1RWRf748KzyGBXvOYRA"
+  per_query_limit: 100
+
+  cookie_skip:
+    - __cf_bm
+    - gt
+    - g_state
+    - _ga
+    - _gid

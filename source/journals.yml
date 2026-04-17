@@ -1,0 +1,68 @@
+# CrossRef journal sources
+# Used by: src/crossref_fetcher.py
+#
+# To add a new journal: append an entry with its ISSN.
+# Find ISSN at https://portal.issn.org or the journal's About page.
+#
+# Fields:
+#   name         display name in report
+#   issn         print or electronic ISSN (CrossRef accepts either)
+#   days_back    how many days of articles to fetch (default: 14)
+#   max_items    max articles to retrieve per run (default: 30)
+#   bc_filter    filter to breast-cancer-relevant articles only (default: true)
+#
+# CrossRef API is free, no key required.
+# Polite pool: include a mailto in User-Agent (set in crossref_fetcher.py).
+
+crossref_email: "ppoiu87@gmail.com"   # used in User-Agent for CrossRef polite pool
+
+journals:
+  - name: JCO
+    full_name: "Journal of Clinical Oncology"
+    issn: "0732-183X"
+    days_back: 14
+    max_items: 30
+    bc_filter: true
+
+  # Uncomment to activate — no code changes needed
+  # - name: NEJM
+  #   full_name: "New England Journal of Medicine"
+  #   issn: "0028-4793"
+  #   days_back: 14
+  #   max_items: 20
+  #   bc_filter: true
+
+  # - name: Lancet Oncology
+  #   full_name: "The Lancet Oncology"
+  #   issn: "1470-2045"
+  #   days_back: 14
+  #   max_items: 25
+  #   bc_filter: true
+
+  # - name: JAMA Oncology
+  #   full_name: "JAMA Oncology"
+  #   issn: "2374-2437"
+  #   days_back: 14
+  #   max_items: 20
+  #   bc_filter: true
+
+  # - name: Annals of Oncology
+  #   full_name: "Annals of Oncology"
+  #   issn: "0923-7534"
+  #   days_back: 14
+  #   max_items: 20
+  #   bc_filter: true
+
+  # - name: Blood          # hematology
+  #   full_name: "Blood"
+  #   issn: "0006-4971"
+  #   days_back: 14
+  #   max_items: 25
+  #   bc_filter: true
+
+  # - name: JCO Oncology Practice
+  #   full_name: "JCO Oncology Practice"
+  #   issn: "2688-1527"
+  #   days_back: 14
+  #   max_items: 15
+  #   bc_filter: true

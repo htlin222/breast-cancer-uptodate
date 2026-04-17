@@ -17,7 +17,7 @@ from rich.console import Console
 from rich.table import Table
 
 sys.path.insert(0, str(Path(__file__).parent))
-from src import db, fetcher, discover, reporter, webscraper
+from src import db, fetcher, discover, reporter, webscraper, crossref_fetcher
 
 console = Console()
 CREDS_FILE = Path(__file__).parent / "data" / ".creds"
@@ -133,10 +133,37 @@ def cmd_scrape(days: int = 7):
     return results
 
 
+def cmd_journals():
+    import asyncio, json
+    console.print("\n[bold]Fetching journal articles via CrossRef...[/bold]")
+    results = asyncio.run(crossref_fetcher.fetch_all())
+    for journal, articles in results.items():
+        console.print(f"  [cyan]{journal}[/cyan]: {len(articles)} BC articles")
+        for a in articles[:4]:
+            has_abs = "✓" if a.abstract_digest else "—"
+            console.print(f"    [{has_abs}] {a.title[:75]}")
+            console.print(f"        https://doi.org/{a.doi}")
+
+    out = Path(__file__).parent / "data" / "journals_cache.json"
+    out.parent.mkdir(exist_ok=True)
+    out.write_text(json.dumps(
+        {j: [{"title": a.title, "doi": a.doi, "journal": a.journal,
+              "authors": a.authors, "published": a.published,
+              "abstract": a.abstract, "abstract_digest": a.abstract_digest,
+              "tags": a.tags, "url": a.url}
+             for a in arts]
+         for j, arts in results.items()},
+        ensure_ascii=False, indent=2
+    ))
+    console.print(f"[green]✓ Cached → {out}[/green]")
+    return results
+
+
 def cmd_run():
     cmd_fetch()
     cmd_discover()
     cmd_scrape()
+    cmd_journals()
     cmd_report()
 
 
@@ -146,6 +173,7 @@ COMMANDS = {
     "discover": cmd_discover,
     "report": cmd_report,
     "scrape": cmd_scrape,
+    "journals": cmd_journals,
     "accounts": cmd_accounts,
     "run": cmd_run,
 }

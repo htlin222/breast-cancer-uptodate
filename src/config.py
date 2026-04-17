@@ -46,3 +46,13 @@ def http_headers() -> dict[str, str]:
 @lru_cache(maxsize=None)
 def twitter() -> dict:
     return _load("twitter.yml")["twitter"]
+
+
+@lru_cache(maxsize=None)
+def journals() -> list[dict]:
+    return _load("journals.yml").get("journals", [])
+
+
+@lru_cache(maxsize=None)
+def crossref_email() -> str:
+    return _load("journals.yml").get("crossref_email", "")

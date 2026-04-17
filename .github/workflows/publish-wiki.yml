@@ -94,5 +94,5 @@ jobs:
             echo "Wiki already up-to-date."
           else
             git -C wiki commit -m "wiki: $(date -u +%Y-%m-%d) — publish reports [skip ci]"
-            git -C wiki push "$WIKI_URL" HEAD:main --force
+            git -C wiki push "$WIKI_URL" HEAD:master --force
           fi

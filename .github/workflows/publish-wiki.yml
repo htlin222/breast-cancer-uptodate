@@ -6,7 +6,6 @@ on:
     paths:
       - "reports/**.md"
 
-  # Allow manual trigger from the Actions tab
   workflow_dispatch:
 
 jobs:
@@ -32,34 +31,31 @@ jobs:
           echo "files<<EOF" >> "$GITHUB_OUTPUT"
           echo "$files" >> "$GITHUB_OUTPUT"
           echo "EOF" >> "$GITHUB_OUTPUT"
-          echo "Changed report files: $files"
+          echo "Changed: $files"
 
-      - name: Setup wiki
+      - name: Setup wiki directory
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           WIKI_URL="https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.wiki.git"
 
-          # Try to clone existing wiki; if it doesn't exist, bootstrap it
           if git clone "$WIKI_URL" wiki 2>/dev/null; then
             echo "Cloned existing wiki."
           else
-            echo "Wiki not found — bootstrapping."
-            mkdir wiki && cd wiki
-            git init -b main
-            git remote add origin "$WIKI_URL"
-            # Will be populated in next step
+            echo "Wiki not found — bootstrapping fresh."
+            mkdir -p wiki
+            git -C wiki init -b main
+            git -C wiki remote add origin "$WIKI_URL"
           fi
 
-          cd wiki
-          git config user.name  "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git -C wiki config user.name  "github-actions[bot]"
+          git -C wiki config user.email "github-actions[bot]@users.noreply.github.com"
 
       - name: Copy reports and rebuild index
         run: |
           changed_files="${{ steps.changed.outputs.files }}"
           if [ -z "$changed_files" ]; then
-            echo "No report files changed — skipping."
+            echo "No changed files — skipping."
             exit 0
           fi
 
@@ -70,7 +66,6 @@ jobs:
           done
 
           # Rebuild Home.md index (newest first)
-          cd wiki
           {
             echo "# 乳癌治療趨勢週報"
             echo ""
@@ -78,23 +73,21 @@ jobs:
             echo ""
             echo "| 週次 | 連結 |"
             echo "|------|------|"
-            for md in $(ls [0-9][0-9][0-9][0-9]-W[0-9][0-9].md 2>/dev/null | sort -r); do
-              week="${md%.md}"
+            for md in $(ls wiki/[0-9][0-9][0-9][0-9]-W[0-9][0-9].md 2>/dev/null | sort -r); do
+              week="$(basename "${md%.md}")"
               echo "| $week | [[$week]] |"
             done
-          } > Home.md
+          } > wiki/Home.md
 
       - name: Commit and push wiki
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           WIKI_URL="https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.wiki.git"
-          cd wiki
-          git add -A
-          if git diff --cached --quiet; then
+          git -C wiki add -A
+          if git -C wiki diff --cached --quiet; then
             echo "Wiki already up-to-date."
           else
-            git commit -m "wiki: $(date -u +%Y-%m-%d) — publish reports [skip ci]"
-            # Force push handles both fresh init and normal update
-            git push "$WIKI_URL" HEAD:main --force
+            git -C wiki commit -m "wiki: $(date -u +%Y-%m-%d) — publish reports [skip ci]"
+            git -C wiki push "$WIKI_URL" HEAD:main --force
           fi

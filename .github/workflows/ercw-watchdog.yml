@@ -1,10 +1,10 @@
 name: ERCW watchdog
 
 # 雲端 routine 每週日 10:00（台北）跑。
-# ①週日 14:00 檢查本週週報有沒有上線；沒上線也沒有開著的 PR（＝routine 整個沒產出）→ 推 LINE 給 Bear。
-# ②每天 09:00 檢查有沒有開超過 24 小時還沒合併的週報 PR（查核沒過、等 Bear）→ 推 LINE。
-# LINE 送不出去（例如月額度用完）→ 改在本 repo 開 issue，GitHub App 會通知。
-# 手動執行時勾 test 會送一則測試訊息，用來確認 LINE 通道。
+# ①週日 14:00 檢查本週週報有沒有上線；沒上線也沒有開著的 PR（＝routine 整個沒產出）→ 轉紅。
+# ②每天 09:00 檢查有沒有開超過 24 小時還沒合併的週報 PR（查核沒過、等 Bear）→ 轉紅。
+# 2026-11-02 起不推 LINE：紅燈＋::error::，Grok Bot 每小時讀 annotation 轉給 Bear（白天最慢約 1 小時），不重跑、不修 code。
+# 手動執行時勾 test 會故意轉紅，用來確認這條通道。
 on:
   schedule:
     - cron: "0 6 * * 0"   # 週日 06:00 UTC = 台北 14:00
@@ -12,69 +12,55 @@ on:
   workflow_dispatch:
     inputs:
       test:
-        description: "只送一則 LINE 測試訊息"
+        description: "故意轉紅，測試 Grok Bot 通道"
         type: boolean
         default: false
 
 permissions:
   contents: read
-  issues: write
 
 jobs:
   check:
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      LINE_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
-      LINE_TO: ${{ secrets.LINE_TO_BEAR }}
       BLOG: agoodbear/agoodbear.github.io
       SCHEDULE: ${{ github.event.schedule }}
     steps:
       - name: Check this week and notify
         run: |
-          send() {
-            body=$(jq -n --arg to "$LINE_TO" --arg t "$1" '{to:$to,messages:[{type:"text",text:$t}]}')
-            code=$(curl -s -o /tmp/line_resp.txt -w '%{http_code}' -X POST https://api.line.me/v2/bot/message/push \
-              -H "Authorization: Bearer $LINE_TOKEN" -H 'Content-Type: application/json' -d "$body")
-            if [ "$code" = 200 ]; then echo "LINE sent"; return 0; fi
-            resp=$(head -c 500 /tmp/line_resp.txt)
-            echo "::error::LINE 推播失敗 HTTP ${code}：${resp}"
-            # 已有開著的同類 issue 就留言，不每天開新的
-            open_issue=$(gh issue list -R "$GITHUB_REPOSITORY" --state open --search "ERCW 通知沒送到 LINE in:title" --json number -q '.[0].number')
-            [ -n "$open_issue" ] && { gh issue comment -R "$GITHUB_REPOSITORY" "$open_issue" --body "又一則沒送到（HTTP ${code}）：
-
-          $1" || true; exit 1; }
-            gh issue create -R "$GITHUB_REPOSITORY" --title "ERCW 通知沒送到 LINE（HTTP ${code}）" \
-              --body "LINE 回應：\`${resp}\`
-
-          原本要送的訊息：
-
-          $1" || true
-            exit 1
+          failed=0
+          # 不推 LINE：寫 ::error::（Grok Bot 讀 annotation 轉給 Bear）＋step summary，整支結束時轉紅
+          alert() {
+            printf '%s\n' "$1" >> "$GITHUB_STEP_SUMMARY"
+            esc=$(printf '%s' "$1" | sed -e 's/%/%25/g' | awk 'BEGIN{ORS="%0A"}{print}')
+            echo "::error::${esc}"
+            failed=1
           }
           if [ "${{ inputs.test }}" = "true" ]; then
-            send "🔔 ER Cardio Weekly 通知測試：之後每週上線、查核沒過、或雲端沒產出，都會推到這裡。"
-            exit 0
+            alert "🔔 ER Cardio Weekly 通知測試（不是真的出事）：週報 PR 卡住或雲端沒產出時，會經 Grok Bot 通知。測試網址：https://github.com/agoodbear/agoodbear.github.io/pulls"
+            exit 1
           fi
           # ② 每天：開超過 24 小時還沒合併的週報 PR
           stale=$(gh pr list -R "$BLOG" --state open --json headRefName,url,createdAt \
             -q '.[] | select(.headRefName|startswith("claude/ercw-")) | select((now - (.createdAt|fromdateiso8601)) > 86400) | .url')
           if [ -n "$stale" ]; then
-            send "⏳ ER Cardio Weekly 有週報 PR 卡超過 24 小時沒上線（查核沒過，等你決定）：
+            alert "⏳ ER Cardio Weekly 有週報 PR 卡超過 24 小時沒上線（查核沒過，等你決定）：
           ${stale}
-          👉 回電腦跟我說「看週報 PR」"
+          👉 跟 Claude Code 說「看週報 PR」"
           fi
-          [ "$SCHEDULE" = "0 1 * * *" ] && exit 0
+          [ "$SCHEDULE" = "0 1 * * *" ] && exit "$failed"
 
           # ① 週日 14:00：本週有沒有產出
           week=$(TZ=Asia/Taipei python3 -c "from datetime import date;d=date.today();print(f'{d.isocalendar()[0]}-W{d.isocalendar()[1]:02d}')")
           if gh api "repos/$BLOG/contents/content/er-cardio-weekly/$week/index.md?ref=hugo-source" >/dev/null 2>&1; then
-            echo "$week 已在 hugo-source"; exit 0
+            echo "$week 已在 hugo-source"; exit "$failed"
           fi
           pr=$(gh pr list -R "$BLOG" --head "claude/ercw-$week" --state open --json url -q '.[0].url' 2>/dev/null || true)
           if [ -n "$pr" ]; then
-            echo "$week 有開著的 PR（查核未過，已由 auto-PR 通知）：$pr"; exit 0
+            echo "$week 有開著的 PR（查核未過，由 auto-PR 轉紅）：$pr"; exit "$failed"
           fi
-          send "⚠️ ER Cardio Weekly ${week} 到台北 14:00 還沒產出（雲端排程可能沒跑或中途失敗）。
+          alert "⚠️ ER Cardio Weekly ${week} 到台北 14:00 還沒產出（雲端排程可能沒跑或中途失敗）。
           看執行紀錄：https://claude.ai/code/routines
-          👉 回覆「cc 修 週報」我重新觸發雲端排程，寫完會再回報"
+          👉 跟 Claude Code 說「修週報」，或在 Grok Bot 說「cc 修 週報」（要 Mac 開著）"
+          exit "$failed"
